@@ -1,6 +1,21 @@
 extends Node
+## The [Multinput] singleton handles separating inputs made on different input devices (keyboard,
+## mouse, game controller, and MIDI instrument) by players.
+## 
+## A player is registered using [method add_player] and can be assigned one or more input devices
+## using [method player_add_device]. [Multinput] keeps track of input actions (defined in godot's
+## [InputMap]) made by each player.
+##
+## [br][br]
+## [b]Note:[/b] Since most OSes do not support differentiating keyboards and mice, godot dosen't
+## either. Meaning that it is not possible to have two players both using a different keyboard.
 
 
+## Emitted when a player's device has been connected or disconnected.
+##
+## [br][br]
+## [b]Note: [/b] Currently, the only connection/disconnection event that is tracked is for game
+## controllers.
 signal player_device_connection_changed(
 	p_player_id: StringName,
 	p_device: InputDevice,
@@ -8,7 +23,7 @@ signal player_device_connection_changed(
 )
 
 
-var players: Dictionary[StringName, Player]
+var _players: Dictionary[StringName, Player]
 
 
 # =====================
@@ -16,6 +31,11 @@ var players: Dictionary[StringName, Player]
 # =====================
 
 
+## Retruns [code]true[/code] if [param p_event] matches the action [param p_action] from player
+## [param p_player_id].
+##
+## [br][br]
+## [b]See:[/b] [method InputEvent.is_action]
 func input_is_player_action(
 		p_event: InputEvent,
 		p_player_id: StringName,
@@ -25,7 +45,7 @@ func input_is_player_action(
 	if not input_is_from_player(p_event, p_player_id):
 		return false
 	
-	var player: Player = players[p_player_id]
+	var player: Player = _players[p_player_id]
 	
 	# The player has an action override for p_action.
 	if player.has_action(p_action):
@@ -34,6 +54,11 @@ func input_is_player_action(
 		return p_event.is_action(p_action, p_exact_match)
 
 
+## Retruns [code]true[/code] if [param p_event] is being pressed and matches the action
+## [param p_action] from player [param p_player_id].
+##
+## [br][br]
+## [b]See:[/b] [method InputEvent.is_action_pressed]
 func input_is_player_action_pressed(
 		p_event: InputEvent,
 		p_player_id: StringName,
@@ -50,6 +75,11 @@ func input_is_player_action_pressed(
 	return input_is_player_action(p_event, p_player_id, p_action, p_exact_match)
 
 
+## Retruns [code]true[/code] if [param p_event] is released (ie. not pressed) and matches the action
+## [param p_action] from player [param p_player_id].
+##
+## [br][br]
+## [b]See:[/b] [method InputEvent.is_action_released]
 func input_is_player_action_released(
 		p_event: InputEvent,
 		p_player_id: StringName,
@@ -66,6 +96,10 @@ func input_is_player_action_released(
 	return input_is_player_action(p_event, p_player_id, p_action, p_exact_match)
 
 
+## Retruns true if the action [param p_action] is currently pressed for player [param p_player_id].
+##
+## [br][br]
+## [b]See:[/b] [method Input.is_action_pressed]
 func is_player_action_pressed(
 		p_player_id: StringName,
 		p_action: StringName,
@@ -74,10 +108,14 @@ func is_player_action_pressed(
 	if not player_exists(p_player_id):
 		return false
 	
-	return players[p_player_id].is_action_pressed(p_action, p_exact_match)
+	return _players[p_player_id].is_action_pressed(p_action, p_exact_match)
 
 
-
+## Retruns true if the action [param p_action] for player [param p_player_id] has been pressed in
+## the current frame or physics tick.
+##
+## [br][br]
+## [b]See:[/b] [method Input.is_action_just_pressed]
 func is_player_action_just_pressed(
 		p_player_id: StringName,
 		p_action: StringName,
@@ -86,7 +124,7 @@ func is_player_action_just_pressed(
 	if not player_exists(p_player_id):
 		return false
 	
-	var player: Player = players[p_player_id]
+	var player: Player = _players[p_player_id]
 	
 	if p_exact_match and not player.is_action_exact(p_action):
 		return false
@@ -97,6 +135,11 @@ func is_player_action_just_pressed(
 		return player.get_action_pressed_process_frame(p_action) == Engine.get_process_frames()
 
 
+## Retruns true if the action [param p_action] for player [param p_player_id] has been released in
+## the current frame or physics tick.
+##
+## [br][br]
+## [b]See:[/b] [method Input.is_action_just_released]
 func is_player_action_just_released(
 		p_player_id: StringName,
 		p_action: StringName,
@@ -105,7 +148,7 @@ func is_player_action_just_released(
 	if not player_exists(p_player_id):
 		return false
 	
-	var player: Player = players[p_player_id]
+	var player: Player = _players[p_player_id]
 	
 	if p_exact_match and not player.is_action_exact(p_action):
 		return false
@@ -116,6 +159,7 @@ func is_player_action_just_released(
 		return player.get_action_released_process_frame(p_action) == Engine.get_process_frames()
 
 
+## [b]See:[/b] [method Input.get_action_strength]
 func get_player_action_strength(
 		p_player_id: StringName,
 		p_action: StringName,
@@ -123,9 +167,10 @@ func get_player_action_strength(
 	) -> float:
 	if not player_exists(p_player_id):
 		return 0.0
-	return players[p_player_id].get_action_strength(p_action, p_exact_match)
+	return _players[p_player_id].get_action_strength(p_action, p_exact_match)
 
 
+## [b]See:[/b] [method Input.get_action_raw_strength]
 func get_player_action_raw_strength(
 		p_player_id: StringName,
 		p_action: StringName,
@@ -133,9 +178,10 @@ func get_player_action_raw_strength(
 	) -> float:
 	if not player_exists(p_player_id):
 		return 0.0
-	return players[p_player_id].get_action_raw_strength(p_action, p_exact_match)
+	return _players[p_player_id].get_action_raw_strength(p_action, p_exact_match)
 
 
+## [b]See:[/b] [method Input.get_axis]
 func get_player_axis(
 		p_player_id: StringName,
 		p_negative_action: StringName,
@@ -147,6 +193,7 @@ func get_player_axis(
 	)
 
 
+## [b]See:[/b] [method Input.get_axis] and [method Input.get_raw_strength]
 func get_player_raw_axis(
 		p_player_id: StringName,
 		p_negative_action: StringName,
@@ -158,6 +205,10 @@ func get_player_raw_axis(
 	)
 
 
+## Gets a vector for player [param p_player_id] defined by the four actions given defining values
+## for the x and y axes.
+##
+## [b]See:[/b] [method Input.get_vector]
 func get_player_vector(
 		p_player_id: StringName,
 		p_negative_x_action: StringName,
@@ -169,7 +220,7 @@ func get_player_vector(
 	if not player_exists(p_player_id):
 		return Vector2.ZERO
 	
-	var player: Player = players[p_player_id]
+	var player: Player = _players[p_player_id]
 	
 	var vector := Vector2(
 		player.get_action_raw_strength(p_positive_x_action, false)
@@ -225,14 +276,18 @@ func get_player_vector(
 # ====================
 
 
+## Returns [code]true[/code] if [param p_event] is from a device assigned to any player.
 func input_has_player(p_event: InputEvent) -> bool:
 	return not input_get_player(p_event).is_empty()
 
 
+## Returns [code]true[/code] if [param p_event] is from a device assigned to [param p_player_id].
 func input_is_from_player(p_event: InputEvent, p_player_id: StringName) -> bool:
 	return input_get_player(p_event) == p_player_id
 
 
+## Returns the player that has [param p_event]'s device assigned. If [param p_event]'s device is not
+## assigned to any player, returns an empty [StringName].
 func input_get_player(p_event: InputEvent) -> StringName:
 	return device_get_player(InputDevice.create_from_event(p_event))
 
@@ -242,23 +297,27 @@ func input_get_player(p_event: InputEvent) -> StringName:
 # ==========================
 
 
+## Returns the player that has [param p_device] assigned. If [p_device] is not assigned to any
+## player, returns an empty [StringName].
 func device_get_player(p_device: InputDevice) -> StringName:
-	for player: StringName in players:
-		if players[player].has_device(p_device):
+	for player: StringName in _players:
+		if _players[player].has_device(p_device):
 			return player
 	return &""
 
 
+## Returns [code]true[/code] if [param p_device] is assigned to any player.
 func is_device_assigned(p_device: InputDevice) -> bool:
 	return not device_get_player(p_device).is_empty()
 
 
+## Unassign [param p_device] from the player it is assigned to.
 func unassign_device(p_device: InputDevice) -> void:
 	var player_id: StringName = device_get_player(p_device)
 	if player_id.is_empty():
 		return
 	
-	players[player_id].remove_device(p_device)
+	_players[player_id].remove_device(p_device)
 
 
 # =====================
@@ -266,6 +325,7 @@ func unassign_device(p_device: InputDevice) -> void:
 # =====================
 
 
+## Adds a player named [param p_player_id]. Errors if [param p_player_id] already exists.
 func add_player(p_player_id: StringName) -> void:
 	if p_player_id.is_empty():
 		push_error("Cannot add empty player")
@@ -273,29 +333,37 @@ func add_player(p_player_id: StringName) -> void:
 	if player_exists(p_player_id):
 		push_error("Input player `%s` has already been added")
 		return
-	players[p_player_id] = Player.new()
+	_players[p_player_id] = Player.new()
 
 
+## Removes the player named [param p_player_id].
+##
+## [br][br]
+## [b]See:[/b] [method add_player]
 func remove_player(p_player_id: StringName) -> void:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
 		return
-	var player: Player = players[p_player_id]
+	var player: Player = _players[p_player_id]
 	player.free()
-	players.erase(p_player_id)
+	_players.erase(p_player_id)
 
 
+## Returns [code]true[/code] if the player [param p_player_id] exists.
 func player_exists(p_player_id: StringName) -> bool:
-	return p_player_id in players
+	return p_player_id in _players
 
 
+## Returns [code]true[/code] if the player [param p_player_id] has any device assigned.
 func player_has_assigned_device(p_player_id: StringName) -> bool:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
 		return true
-	return players[p_player_id].get_device_count() != 0
+	return _players[p_player_id].get_device_count() != 0
 
 
+## Assigns the device [param p_device] to the player [param p_player_id]. An [InputDevice] cannot be
+## assigned to multiple players.
 func player_add_device(p_player_id: StringName, p_device: InputDevice) -> void:
 	if not p_device.is_valid():
 		push_error("Cannot add invalid device to player")
@@ -312,21 +380,28 @@ func player_add_device(p_player_id: StringName, p_device: InputDevice) -> void:
 		])
 		return
 	
-	players[p_player_id].add_device(p_device)
+	_players[p_player_id].add_device(p_device)
 
 
+## Returns the list of devices assigned to [param p_player_id].
 func player_get_devices(p_player_id: StringName) -> Array[InputDevice]:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
 		return []
-	return players[p_player_id].get_devices()
+	return _players[p_player_id].get_devices()
 
 
+## Unassigns all devices assigned to [param p_player_id].
 func player_clear_devices(p_player_id: StringName) -> void:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
 		return
-	players[p_player_id].clear_devices()
+	_players[p_player_id].clear_devices()
+
+
+## Returns the list of all existing players.
+func get_players() -> Array[StringName]:
+	return _players.keys()
 
 
 # ==================
@@ -343,7 +418,7 @@ func _input(p_event: InputEvent) -> void:
 	if player_name.is_empty():
 		return
 	
-	players[player_name]._process_input_event(p_event)
+	_players[player_name]._process_input_event(p_event)
 
 
 func _on_joy_connection_changed(p_device: int, p_connected: bool) -> void:
@@ -386,6 +461,7 @@ class Action extends Object:
 
 class Player extends Object:
 	var devices: Array[InputDevice]
+	## TODO: allow for modifying the local_input_map
 	var local_input_map: Dictionary[StringName, Action]
 	var action_states: Dictionary[StringName, ActionState]
 	

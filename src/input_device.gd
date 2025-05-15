@@ -1,8 +1,11 @@
 class_name InputDevice
-extends Resource
+extends RefCounted
+## An [InputDevice] holds information about a physical device used for input.
 
 
+## A type of a device.
 enum DeviceType {
+	## An unknown device is either non existant or not supported.
 	UNKNOWN,
 	KEYBOARD,
 	GAME_CONTROLLER,
@@ -11,10 +14,13 @@ enum DeviceType {
 }
 
 
+## The type of this device.
 var type := DeviceType.UNKNOWN
+## The identifient of this device. This corresponds to [member InputEvent.device].
 var id: int
 
 
+## Returns the [InputDevice] of [param p_event].
 static func create_from_event(p_event: InputEvent) -> InputDevice:
 	var input_device := InputDevice.new()
 	
@@ -34,10 +40,13 @@ static func create_from_event(p_event: InputEvent) -> InputDevice:
 	return input_device
 
 
+## Returns [code]true[/code] if this input device is valid. Meaning that the [member type] is
+## not [enum DeviceType.UNKNOWN].
 func is_valid() -> bool:
 	return type != DeviceType.UNKNOWN
 
 
+## Returns [code]true[/code] if this input device is the same as [param p_other].
 func equals(p_other: InputDevice) -> bool:
 	return type == p_other.type and id == p_other.id
 
