@@ -424,6 +424,112 @@ func get_players() -> Array[StringName]:
 	return _players.keys()
 
 
+# ====================================
+# = Player action override functions =
+# ====================================
+
+
+func player_add_action(p_player_id: StringName, p_action: StringName) -> void:
+	if not player_exists(p_player_id):
+		push_error("Input player `%s` does not exist" % p_player_id)
+		return
+	
+	var player: Player = _players[p_player_id]
+	if player.has_action(p_action):
+		push_error("Input player `%s` already has action `%s`" % [p_player_id, p_action])
+		return
+	
+	player.add_action(p_action)
+
+
+func player_remove_action(p_player_id: StringName, p_action: StringName) -> void:
+	if not player_exists(p_player_id):
+		push_error("Input player `%s` does not exist" % p_player_id)
+		return
+	
+	var player: Player = _players[p_player_id]
+	if not player.has_action(p_action):
+		push_error("Input player `%s` does not have action `%s`" % [p_player_id, p_action])
+		return
+	
+	player.remove_action(p_action)
+
+
+func player_has_action(p_player_id: StringName, p_action: StringName) -> void:
+	if not player_exists(p_player_id):
+		push_error("Input player `%s` does not exist" % p_player_id)
+		return
+	return _players[p_player_id].has_action(p_action)
+
+
+func player_get_actions(p_player_id: StringName) -> Array[StringName]:
+	if not player_exists(p_player_id):
+		push_error("Input player `%s` does not exist" % p_player_id)
+		return []
+	return _players[p_player_id].get_actions()
+
+
+func player_action_add_event(
+		p_player_id: StringName,
+		p_action: StringName,
+		p_event: InputEvent,
+	) -> void:
+	if not player_exists(p_player_id):
+		push_error("Input player `%s` does not exist" % p_player_id)
+		return
+	
+	var player: Player = _players[p_player_id]
+	if not player.has_action(p_action):
+		push_error("Input player `%s` does not have action `%s`" % [p_player_id, p_action])
+		return
+	
+	if not player.action_has_event(p_action, p_event, true):
+		player.action_add_event(p_action, p_event)
+
+
+func player_action_remove_event(
+		p_player_id: StringName,
+		p_action: StringName,
+		p_event: InputEvent,
+	) -> void:
+	if not player_exists(p_player_id):
+		push_error("Input player `%s` does not exist" % p_player_id)
+		return
+	
+	var player: Player = _players[p_player_id]
+	if not player.has_action(p_action):
+		push_error("Input player `%s` does not have action `%s`" % [p_player_id, p_action])
+		return
+	
+	player.action_remove_event(p_action, p_event)
+
+
+func player_action_get_events(p_player_id: StringName, p_action: StringName) -> Array[InputEvent]:
+	if not player_exists(p_player_id):
+		push_error("Input player `%s` does not exist" % p_player_id)
+		return []
+	
+	var player: Player = _players[p_player_id]
+	if not player.has_action(p_action):
+		push_error("Input player `%s` does not have action `%s`" % [p_player_id, p_action])
+		return []
+	
+	return player.action_get_events(p_action)
+
+
+func player_action_clear_events(p_player_id: StringName, p_action: StringName) -> void:
+	if not player_exists(p_player_id):
+		push_error("Input player `%s` does not exist" % p_player_id)
+		return
+	
+	var player: Player = _players[p_player_id]
+	if not player.has_action(p_action):
+		push_error("Input player `%s` does not have action `%s`" % [p_player_id, p_action])
+		return
+	
+	player.action_clear_events(p_action)
+
+
 # ==================
 # = Input Handling =
 # ==================
@@ -481,7 +587,6 @@ class Action extends Object:
 
 class Player extends Object:
 	var devices: Array[InputDevice]
-	## TODO: allow for modifying the local_input_map
 	var local_input_map: Dictionary[StringName, Action]
 	var action_states: Dictionary[StringName, ActionState]
 	
