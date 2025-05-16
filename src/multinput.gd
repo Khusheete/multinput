@@ -128,7 +128,7 @@ func is_player_action_pressed(
 	if not player_exists(p_player_id):
 		return false
 	
-	return _players[p_player_id].is_action_pressed(p_action, p_exact_match)
+	return _players[p_player_id].action_is_pressed(p_action, p_exact_match)
 
 
 ## Retruns true if the action [param p_action] for player [param p_player_id] has been pressed in
@@ -146,13 +146,13 @@ func is_player_action_just_pressed(
 	
 	var player: Player = _players[p_player_id]
 	
-	if p_exact_match and not player.is_action_exact(p_action):
+	if p_exact_match and not player.action_is_exact(p_action):
 		return false
 	
 	if Engine.is_in_physics_frame():
-		return player.get_action_pressed_physics_frame(p_action) == Engine.get_physics_frames()
+		return player.action_get_pressed_physics_frame(p_action) == Engine.get_physics_frames()
 	else:
-		return player.get_action_pressed_process_frame(p_action) == Engine.get_process_frames()
+		return player.action_get_pressed_process_frame(p_action) == Engine.get_process_frames()
 
 
 ## Retruns true if the action [param p_action] for player [param p_player_id] has been released in
@@ -170,13 +170,13 @@ func is_player_action_just_released(
 	
 	var player: Player = _players[p_player_id]
 	
-	if p_exact_match and not player.is_action_exact(p_action):
+	if p_exact_match and not player.action_is_exact(p_action):
 		return false
 	
 	if Engine.is_in_physics_frame():
-		return player.get_action_released_physics_frame(p_action) == Engine.get_physics_frames()
+		return player.action_get_released_physics_frame(p_action) == Engine.get_physics_frames()
 	else:
-		return player.get_action_released_process_frame(p_action) == Engine.get_process_frames()
+		return player.action_get_released_process_frame(p_action) == Engine.get_process_frames()
 
 
 ## [b]See:[/b] [method Input.get_action_strength]
@@ -187,7 +187,7 @@ func get_player_action_strength(
 	) -> float:
 	if not player_exists(p_player_id):
 		return 0.0
-	return _players[p_player_id].get_action_strength(p_action, p_exact_match)
+	return _players[p_player_id].action_get_strength(p_action, p_exact_match)
 
 
 ## [b]See:[/b] [method Input.get_action_raw_strength]
@@ -198,7 +198,7 @@ func get_player_action_raw_strength(
 	) -> float:
 	if not player_exists(p_player_id):
 		return 0.0
-	return _players[p_player_id].get_action_raw_strength(p_action, p_exact_match)
+	return _players[p_player_id].action_get_raw_strength(p_action, p_exact_match)
 
 
 ## [b]See:[/b] [method Input.get_axis]
@@ -243,10 +243,10 @@ func get_player_vector(
 	var player: Player = _players[p_player_id]
 	
 	var vector := Vector2(
-		player.get_action_raw_strength(p_positive_x_action, false)
-		- player.get_action_raw_strength(p_negative_x_action, false),
-		player.get_action_raw_strength(p_positive_y_action, false)
-		- player.get_action_raw_strength(p_negative_y_action, false)
+		player.action_get_raw_strength(p_positive_x_action, false)
+		- player.action_get_raw_strength(p_negative_x_action, false),
+		player.action_get_raw_strength(p_positive_y_action, false)
+		- player.action_get_raw_strength(p_negative_y_action, false)
 	)
 	
 	if p_deadzone < 0.0:
@@ -518,20 +518,19 @@ class Player extends Object:
 		return devices.size()
 	
 	
-	func get_action_events(p_action: StringName) -> Array[InputEvent]:
-		var result: Array[InputEvent]
-		result.assign(local_input_map[p_action].events)
-		return result
-	
-	
 	func remove_action(p_action: StringName) -> void:
 		var action: Action = local_input_map[p_action]
 		action.free()
 		local_input_map.erase(p_action)
+		action_states.erase(p_action)
 	
 	
 	func add_action(p_action: StringName) -> void:
 		local_input_map[p_action] = Action.new()
+	
+	
+	func get_actions() -> Array[StringName]:
+		return local_input_map.keys()
 	
 	
 	func action_add_event(p_action: StringName, p_event: InputEvent) -> void:
@@ -542,10 +541,20 @@ class Player extends Object:
 		return _action_find_event(p_action, p_event, p_exact_match) != -1
 	
 	
+	func action_get_events(p_action: StringName) -> Array[InputEvent]:
+		var result: Array[InputEvent]
+		result.assign(local_input_map[p_action].events)
+		return result
+	
+	
 	func action_remove_event(p_action: StringName, p_event: InputEvent) -> void:
 		var index: int = _action_find_event(p_action, p_event, true)
 		if index != -1:
 			local_input_map[p_action].events.remove_at(index)
+	
+	
+	func action_clear_events(p_action: StringName) -> void:
+		local_input_map[p_action].events.clear()
 	
 	
 	func action_set_deadzone(p_action: StringName, p_deadzone: float) -> void:
@@ -566,21 +575,21 @@ class Player extends Object:
 		return p_action in local_input_map
 	
 	
-	func is_action_pressed(p_action: StringName, p_exact: bool) -> bool:
+	func action_is_pressed(p_action: StringName, p_exact: bool) -> bool:
 		var action_state: ActionState = action_states.get(p_action, null)
 		if not action_state:
 			return false
 		return action_state.pressed and (action_state.exact if p_exact else true)
 	
 	
-	func is_action_exact(p_action: StringName) -> bool:
+	func action_is_exact(p_action: StringName) -> bool:
 		var action_state: ActionState = action_states.get(p_action, null)
 		if not action_state:
 			return false
 		return action_state.exact
 	
 	
-	func get_action_raw_strength(p_action: StringName, p_exact_match: bool) -> float:
+	func action_get_raw_strength(p_action: StringName, p_exact_match: bool) -> float:
 		var action_state: ActionState = action_states.get(p_action, null)
 		if not action_state:
 			return 0.0
@@ -591,7 +600,7 @@ class Player extends Object:
 		return action_state.raw_strength
 	
 	
-	func get_action_strength(p_action: StringName, p_exact_match: bool) -> float:
+	func action_get_strength(p_action: StringName, p_exact_match: bool) -> float:
 		var action_state: ActionState = action_states.get(p_action, null)
 		if not action_state:
 			return 0.0
@@ -602,28 +611,28 @@ class Player extends Object:
 		return action_state.strength
 	
 	
-	func get_action_pressed_process_frame(p_action: StringName) -> int:
+	func action_get_pressed_process_frame(p_action: StringName) -> int:
 		var action_state: ActionState = action_states.get(p_action, null)
 		if not action_state:
 			return -1
 		return action_state.pressed_process_frame
 	
 	
-	func get_action_pressed_physics_frame(p_action: StringName) -> int:
+	func action_get_pressed_physics_frame(p_action: StringName) -> int:
 		var action_state: ActionState = action_states.get(p_action, null)
 		if not action_state:
 			return -1
 		return action_state.pressed_physics_frame
 	
 	
-	func get_action_released_process_frame(p_action: StringName) -> int:
+	func action_get_released_process_frame(p_action: StringName) -> int:
 		var action_state: ActionState = action_states.get(p_action, null)
 		if not action_state:
 			return -1
 		return action_state.released_process_frame
 	
 	
-	func get_action_released_physics_frame(p_action: StringName) -> int:
+	func action_get_released_physics_frame(p_action: StringName) -> int:
 		var action_state: ActionState = action_states.get(p_action, null)
 		if not action_state:
 			return -1
@@ -651,11 +660,11 @@ class Player extends Object:
 		for action: StringName in InputMap.get_actions():
 			if has_action(action):
 				continue
-			var strength: float = p_event.get_action_strength(action, false)
+			var strength: float = p_event.action_get_strength(action, false)
 			
-			if p_event.is_action_pressed(action, false, true):
+			if p_event.action_is_pressed(action, false, true):
 				_action_set_pressed(action, event_raw_strength, strength, true)
-			elif p_event.is_action_pressed(action, false, false):
+			elif p_event.action_is_pressed(action, false, false):
 				_action_set_pressed(action, event_raw_strength, strength, false)
 			elif p_event.is_action_released(action, true):
 				_action_set_released(action, true)
