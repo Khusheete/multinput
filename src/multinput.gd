@@ -729,7 +729,6 @@ func _input_event_match(p_event_a: InputEvent, p_event_b: InputEvent, p_exact_ma
 			and p_event_a.ctrl_pressed == p_event_b.ctrl_pressed
 			and p_event_a.meta_pressed == p_event_b.meta_pressed
 			and p_event_a.shift_pressed == p_event_b.shift_pressed
-			and p_event_a.command_or_control_autoremap == p_event_b.command_or_control_autoremap
 		)
 		if not exact_match:
 			return false
