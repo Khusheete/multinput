@@ -60,6 +60,55 @@ static func create_from_event(p_event: InputEvent) -> InputDevice:
 	return input_device
 
 
+func create_input_event_joypad_button(p_button_index: JoyButton) -> InputEventJoypadButton:
+	if type != DeviceType.GAME_CONTROLLER:
+		return null
+	
+	var event := InputEventJoypadButton.new()
+	event.device = id
+	event.button_index = p_button_index
+	return event
+
+
+func create_input_event_joypad_motion(p_axis: JoyAxis, p_positive: bool) -> InputEventJoypadMotion:
+	if type != DeviceType.GAME_CONTROLLER:
+		return null
+	
+	var event := InputEventJoypadMotion.new()
+	event.device = id
+	event.axis = p_axis
+	event.axis_value = 1.0 if p_positive else -1.0
+	return event
+
+
+func create_input_event_key(p_physical_keycode: Key, p_modifiers: KeyModifierMask = 0) -> InputEventKey:
+	if type != DeviceType.KEYBOARD:
+		return null
+	
+	var event := InputEventKey.new()
+	event.device = id
+	event.physical_keycode = p_physical_keycode
+	event.shift_pressed = p_modifiers & KEY_MASK_SHIFT
+	event.alt_pressed = p_modifiers & KEY_MASK_ALT
+	event.meta_pressed = p_modifiers & KEY_MASK_META
+	event.ctrl_pressed = p_modifiers & KEY_MASK_CTRL
+	return event
+
+
+func create_input_event_mouse_button(p_button_index: MouseButton, p_modifiers: KeyModifierMask = 0) -> InputEventMouseButton:
+	if type != DeviceType.MOUSE:
+		return null
+	
+	var event := InputEventMouseButton.new()
+	event.device = id
+	event.button_index = p_button_index
+	event.shift_pressed = p_modifiers & KEY_MASK_SHIFT
+	event.alt_pressed = p_modifiers & KEY_MASK_ALT
+	event.meta_pressed = p_modifiers & KEY_MASK_META
+	event.ctrl_pressed = p_modifiers & KEY_MASK_CTRL
+	return event
+
+
 ## Returns [code]true[/code] if this input device is valid. Meaning that the [member type] is
 ## not [enum DeviceType.UNKNOWN].
 func is_valid() -> bool:
