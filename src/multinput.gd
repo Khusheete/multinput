@@ -429,6 +429,11 @@ func get_players() -> Array[StringName]:
 # ====================================
 
 
+## Adds the action [param p_action] to the player [param p_player_id]'s input map. This overrides
+## actions defined in Godot's [InputMap]. This system allows for input remapping per player.
+## 
+## [br][br]
+## [b]See:[/b] [method player_action_add_event], [method player_action_remove_event]
 func player_add_action(p_player_id: StringName, p_action: StringName) -> void:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
@@ -442,6 +447,10 @@ func player_add_action(p_player_id: StringName, p_action: StringName) -> void:
 	player.add_action(p_action)
 
 
+## Removes the action [param p_action] from the player [param p_player_id]'s input map.
+##
+## [br][br]
+## [b]See:[b/] [method player_add_action]
 func player_remove_action(p_player_id: StringName, p_action: StringName) -> void:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
@@ -455,6 +464,8 @@ func player_remove_action(p_player_id: StringName, p_action: StringName) -> void
 	player.remove_action(p_action)
 
 
+## Returns [code]true[/code] if the action [param p_action] is in the player [param p_player_id]'s
+## input map.
 func player_has_action(p_player_id: StringName, p_action: StringName) -> void:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
@@ -462,6 +473,7 @@ func player_has_action(p_player_id: StringName, p_action: StringName) -> void:
 	return _players[p_player_id].has_action(p_action)
 
 
+## Returns the list of actions in the player [param p_player_id]'s input map.
 func player_get_actions(p_player_id: StringName) -> Array[StringName]:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
@@ -469,6 +481,11 @@ func player_get_actions(p_player_id: StringName) -> Array[StringName]:
 	return _players[p_player_id].get_actions()
 
 
+## Registers [param p_event] to [param p_action] in [param p_player_id]'s input map. The action
+## [param p_action] needs to be defined in [param p_player_id]'s input map.
+## 
+## [br][br]
+## [b]See:[/b] [method player_add_action]
 func player_action_add_event(
 		p_player_id: StringName,
 		p_action: StringName,
@@ -487,6 +504,7 @@ func player_action_add_event(
 		player.action_add_event(p_action, p_event)
 
 
+## Removes [param p_event] from [param p_action] in [param p_player_id]'s input map.
 func player_action_remove_event(
 		p_player_id: StringName,
 		p_action: StringName,
@@ -504,6 +522,8 @@ func player_action_remove_event(
 	player.action_remove_event(p_action, p_event)
 
 
+## Returns the list of events registered for the action [param p_action] in [param p_player_id]'s
+## input map.
 func player_action_get_events(p_player_id: StringName, p_action: StringName) -> Array[InputEvent]:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
@@ -517,6 +537,7 @@ func player_action_get_events(p_player_id: StringName, p_action: StringName) -> 
 	return player.action_get_events(p_action)
 
 
+## Clears all events registered for [param p_action] in [param p_player_id]'s input map.
 func player_action_clear_events(p_player_id: StringName, p_action: StringName) -> void:
 	if not player_exists(p_player_id):
 		push_error("Input player `%s` does not exist" % p_player_id)
